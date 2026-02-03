@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Happy Valentine's Day, Neetu!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --bg:#0f0a0c; --term-bg:#1e1418; --term-bar:#261c20; --border:#2a1a1f;
+    --rose:#e84a6a; --rose-dim:#e88da0; --soft:#d4a0b0; --out:#a08a8e;
+    --dim:#4a3a3e; --gold:#f0a500; --bb-bg:#161013; --row:#221a1e;
+  }
+
+  body {
+    background:var(--bg); font-family:'IBM Plex Mono',monospace;
+    color:#ccc; min-height:100vh; display:flex;
+    justify-content:center; align-items:center;
+    padding:20px; overflow:hidden;
+  }
+
+  /* ════ BOOT ════ */
+  #boot {
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; flex-direction:column;
+    justify-content:center; align-items:center;
+    z-index:100; transition:opacity .6s;
+  }
+  #boot.gone { opacity:0; pointer-events:none; }
+  .boot-inner { width:520px; max-width:92vw; }
+  .bl { font-size:13px; line-height:2; color:var(--out); opacity:0; white-space:pre; }
+  .bl.show { opacity:1; transition:opacity .25s; }
+  .bl .g { color:#6ecf71; }
+  .bl .r { color:var(--rose); }
+  .bl .d { color:var(--dim); }
+  .bar-track { width:100%; height:6px; background:var(--border); border-radius:3px; margin:6px 0; overflow:hidden; }
+  .bar-fill  { height:100%; width:0%; background:var(--rose); border-radius:3px; transition:width .4s; }
+  .bcur { display:inline-block; width:8px; height:13px; background:var(--rose-dim); vertical-align:middle; margin-left:3px; animation:blink 1s step-end infinite; }
+
+  /* ════ MAIN ════ */
+  .container {
+    width:100%; max-width:960px; display:flex; height:520px;
+    border-radius:6px; overflow:hidden;
+    box-shadow:0 0 60px rgba(180,40,60,.22),0 0 120px rgba(180,40,60,.07);
+    opacity:0; transition:opacity .5s .15s;
+  }
+  .container.show { opacity:1; }
+
+  /* LEFT */
+  .terminal { flex:1; background:var(--term-bg); display:flex; flex-direction:column; position:relative; overflow:hidden; border-right:1px solid var(--border); }
+  .tbar { background:var(--term-bar); padding:8px 12px; display:flex; align-items:center; gap:7px; flex-shrink:0; border-bottom:1px solid var(--border); }
+  .dot { width:13px; height:13px; border-radius:50%; }
+  .dot.r{background:#ff5f57;} .dot.y{background:#febc2e;} .dot.g{background:#28c840;}
+  .tbar-label { margin-left:10px; font-size:11px; color:var(--dim); }
+
+  .scene { position:absolute; inset:28px 0 0 0; padding:18px 22px 10px; opacity:0; pointer-events:none; transition:opacity .4s; display:flex; flex-direction:column; }
+  .scene.active { opacity:1; pointer-events:auto; }
+
+  .line { font-size:13px; line-height:1.72; white-space:pre-wrap; }
+  .prompt  { color:var(--rose-dim); }
+  .cmd     { color:#fff; }
+  .out     { color:var(--out); }
+  .success { color:var(--rose-dim); }
+  .dim     { color:var(--dim); }
+  .rose    { color:var(--rose); }
+  .gold    { color:var(--gold); }
+  .soft    { color:var(--soft); }
+  .gap     { height:12px; flex-shrink:0; }
+
+  .cursor { display:inline-block; width:8px; height:14px; background:var(--rose-dim); margin-left:2px; vertical-align:middle; animation:blink 1s step-end infinite; }
+  @keyframes blink { 50%{opacity:0;} }
+
+  .scene-badge { position:absolute; bottom:8px; right:14px; font-size:10px; color:var(--dim); z-index:2; }
+
+  /* input row */
+  .input-row { margin-top:auto; padding-top:10px; border-top:1px solid var(--border); display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .input-row .prompt { font-size:13px; white-space:nowrap; }
+  .input-row .typed  { font-size:13px; color:#fff; white-space:nowrap; min-width:4px; }
+  .input-row .hint   { font-size:10px; color:var(--dim); margin-left:auto; }
+  .typed.wrong { color:#ff5555 !important; }
+
+  /* RIGHT */
+  .bloomberg { flex:1; background:var(--bb-bg); display:flex; flex-direction:column; font-size:11px; overflow:hidden; }
+  .bb-header { background:var(--bg); padding:7px 14px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; border-bottom:1px solid var(--border); }
+  .bb-header .title { color:var(--rose); font-weight:600; font-size:13px; letter-spacing:2px; }
+  .bb-header .ts { color:var(--dim); font-size:11px; }
+  .bb-panel { flex:1; padding:12px 14px; overflow:hidden; display:none; flex-direction:column; }
+  .bb-panel.active { display:flex; }
+  .sec-title { color:var(--rose); font-size:10px; font-weight:600; letter-spacing:1.5px; margin-bottom:8px; margin-top:4px; }
+  .mt { width:100%; border-collapse:collapse; }
+  .mt tr { border-bottom:1px solid var(--row); }
+  .mt td { padding:5px 0; vertical-align:middle; font-size:11.5px; }
+  .mt .tag   { font-size:9px; font-weight:700; color:var(--rose); width:36px; }
+  .mt .label { color:var(--out); padding-left:6px; }
+  .mt .val   { text-align:right; color:#eee; font-weight:500; padding-right:8px; }
+  .mt .badge { font-size:9px; font-weight:700; padding:1px 5px; border-radius:2px; white-space:nowrap; }
+  .b-rose{background:#3a1a22;color:var(--rose);} .b-soft{background:#2a1a2a;color:var(--soft);}
+  .b-gold{background:#2a2218;color:var(--gold);} .b-up{background:#1a2a22;color:#5dba7d;}
+  .divider { border-top:1px solid var(--rose); margin:10px 0 6px; opacity:.35; }
+  .news { margin-bottom:7px; }
+  .news-time { color:var(--rose); font-size:10px; font-weight:600; margin-bottom:1px; }
+  .ntag { font-weight:700; font-size:10px; }
+  .nt-a{color:#ff6b80;} .nt-r{color:var(--soft);} .nt-f{color:var(--rose-dim);}
+  .ntext { color:var(--dim); font-size:10.5px; line-height:1.45; }
+  .bb-footer { border-top:1px solid var(--border); padding:6px 14px; display:flex; justify-content:space-between; flex-shrink:0; background:var(--bg); }
+  .bb-footer span { color:var(--dim); font-size:10px; }
+
+  @media(max-width:620px){
+    .container{flex-direction:column;height:auto;}
+    .terminal,.bloomberg{min-height:260px;}
+    .scene{inset:28px 0 0 0;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ════ BOOT ════ -->
+<div id="boot">
+  <div class="boot-inner">
+    <div class="bl" id="b0"><span class="d">neetu@valentine:~$ </span><span class="r">valentine_protocol.exe</span></div>
+    <div class="bl" id="b1"><span class="d">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span></div>
+    <div class="bl" id="b2"><span>  Initializing love_confession.exe</span><span class="g">  ✓</span></div>
+    <div class="bl" id="b3"><span>  Decrypting neetu_profile.db</span><span class="g">       ✓</span></div>
+    <div class="bl" id="b4"><span>  Connecting heart_exchange.exe</span><span class="g">     ✓</span></div>
+    <div class="bl" id="b5"><span>  Loading secret_letters.log</span><span class="g">        ✓</span></div>
+    <div class="bl" id="b6"><span>  Arming valentine_protocol</span><span class="g">         ✓</span></div>
+    <div class="bl" id="b7"><span class="d">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span></div>
+    <div class="bl" id="b8"><span>  Loading</span></div>
+    <div class="bl" id="b_bar"><div class="bar-track"><div class="bar-fill" id="barFill"></div></div></div>
+    <div class="bl show" id="b_pct"><span id="pctText">  0%</span></div>
+    <div class="bl" id="b9"><span class="d">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span></div>
+    <div class="bl" id="b10" style="margin-top:14px;">
+      <span class="r" style="font-size:22px;letter-spacing:4px;display:block;text-align:center;margin:10px 0 4px;">❤️  H A P P Y  V A L E N T I N E ' S  ❤️</span>
+      <span style="color:var(--soft);display:block;text-align:center;font-size:15px;letter-spacing:3px;">N E E T U</span>
+    </div>
+    <div class="bl" id="b11" style="margin-top:18px;text-align:center;"><span class="d">Opening your surprise...</span><span class="bcur"></span></div>
+  </div>
+</div>
+
+<!-- ════ MAIN ════ -->
+<div class="container" id="mainScreen">
+
+  <!-- LEFT -->
+  <div class="terminal">
+    <div class="tbar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="tbar-label">neetu@valentine ~</span>
+    </div>
+
+    <!-- Scene 0 -->
+    <div class="scene active" id="s0">
+      <div class="line"><span class="out">Initializing love_confession.exe...</span></div>
+      <div class="line"><span class="out">Decrypting neetu_profile.db...</span></div>
+      <div class="line"><span class="success">Connection established. ❤️</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="prompt">lover@neetu:~$</span> <span class="cmd">cat confession.txt</span></div>
+      <div class="gap"></div>
+      <div class="line" style="padding-left:12px"><span class="out">  There's no one else in this world</span></div>
+      <div class="line" style="padding-left:12px"><span class="out">  who makes my heart feel this way.</span></div>
+      <div class="line" style="padding-left:12px"><span class="out">  You are my favorite person, Neetu.</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="rose" style="font-size:16px;">Happy Valentine's Day ❤️</span></div>
+      <div class="input-row">
+        <span class="prompt">lover@neetu:~$</span>
+        <span class="typed" id="typed0"></span><span class="cursor"></span>
+        <span class="hint">type: run love_scan.sh</span>
+      </div>
+    </div>
+
+    <!-- Scene 1 -->
+    <div class="scene" id="s1">
+      <div class="line"><span class="prompt">lover@neetu:~$</span> <span class="cmd">run love_scan.sh</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="out">━━━ Scanning Love Metrics ━━━</span></div>
+      <div class="line"><span class="out">  ❤️ Heartbeat Sync        ........... </span><span class="rose">100.00%</span></div>
+      <div class="line"><span class="out">  ❤️ Smile Trigger Rate    ........... </span><span class="success">INSTANT</span></div>
+      <div class="line"><span class="out">  ❤️ Butterflies Index     ........... </span><span class="gold">9999/9999</span></div>
+      <div class="line"><span class="out">  ❤️ Cuddle Compatibility  ........... </span><span class="rose">PERFECT</span></div>
+      <div class="line"><span class="out">  ❤️ Forever Factor        ........... </span><span class="soft">∞ LOCKED</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="success">Result: You are the one. No bugs found.</span></div>
+      <div class="input-row">
+        <span class="prompt">lover@neetu:~$</span>
+        <span class="typed" id="typed1"></span><span class="cursor"></span>
+        <span class="hint">type: cat secret_letters.log</span>
+      </div>
+    </div>
+
+    <!-- Scene 2 -->
+    <div class="scene" id="s2">
+      <div class="line"><span class="prompt">lover@neetu:~$</span> <span class="cmd">cat secret_letters.log</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="out">[LETTER 01] You laugh and the whole room</span></div>
+      <div class="line"><span class="out">            just feels warmer.</span></div>
+      <div class="line"><span class="out">[LETTER 02] I'd pick you again — in every</span></div>
+      <div class="line"><span class="out">            universe, every life.</span></div>
+      <div class="line"><span class="out">[LETTER 03] You're not just my valentine.</span></div>
+      <div class="line"><span class="out">            You're my everything.</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="out">  ─── end of letters ───</span></div>
+      <div class="input-row">
+        <span class="prompt">lover@neetu:~$</span>
+        <span class="typed" id="typed2"></span><span class="cursor"></span>
+        <span class="hint">type: run forever.exe</span>
+      </div>
+    </div>
+
+    <!-- Scene 3 (final) -->
+    <div class="scene" id="s3">
+      <div class="line"><span class="prompt">lover@neetu:~$</span> <span class="cmd">run forever.exe</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="out">  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️</span></div>
+      <div class="line"><span class="out">  ❤️                            ❤️</span></div>
+      <div class="line"><span class="out">  ❤️    🌹  I LOVE YOU   🌹     ❤️</span></div>
+      <div class="line"><span class="out">  ❤️         N E E T U          ❤️</span></div>
+      <div class="line"><span class="out">  ❤️      💕  Always  💕        ❤️</span></div>
+      <div class="line"><span class="out">  ❤️                            ❤️</span></div>
+      <div class="line"><span class="out">  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️  ❤️</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="success">  valentine_protocol complete. Forever yours. 💕</span></div>
+      <div class="gap"></div>
+      <div class="line"><span class="dim">  [session ended]</span></div>
+    </div>
+
+    <div class="scene-badge" id="badge">1 / 4</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="bloomberg">
+    <div class="bb-header">
+      <span class="title">LOVE EXCHANGE</span>
+      <span class="ts">14 FEB 2026 00:00:00</span>
+    </div>
+    <div class="bb-panel active" id="bb0">
+      <div class="sec-title">NEETU LOVE METRICS – LIVE</div>
+      <table class="mt">
+        <tr><td class="tag">HART</td><td class="label">Heartbeat Sync</td><td class="val">100.00</td><td><span class="badge b-rose">SYNCED</span></td></tr>
+        <tr><td class="tag">SMLE</td><td class="label">Smile Power</td><td class="val">999.99</td><td><span class="badge b-rose">LIMIT UP</span></td></tr>
+        <tr><td class="tag">BUTR</td><td class="label">Butterflies Index</td><td class="val">9999</td><td><span class="badge b-gold">ALL TIME HIGH</span></td></tr>
+        <tr><td class="tag">CUDL</td><td class="label">Cuddle Rating</td><td class="val">MAX</td><td><span class="badge b-soft">PERFECT</span></td></tr>
+        <tr><td class="tag">EVER</td><td class="label">Forever Factor</td><td class="val">∞</td><td><span class="badge b-rose">LOCKED</span></td></tr>
+      </table>
+      <div class="divider"></div>
+      <div class="sec-title">BREAKING – VALENTINE WIRE</div>
+      <div class="news"><div class="news-time">00:00:01</div><span class="ntag nt-a">ALERT:</span><span class="ntext"> Love levels surged overnight. Markets stunned. Nobody saw this coming.</span></div>
+      <div class="news"><div class="news-time">00:00:02</div><span class="ntag nt-r">REPORT:</span><span class="ntext"> Neetu officially the most loved person on the exchange. Confirmed.</span></div>
+    </div>
+    <div class="bb-panel" id="bb1">
+      <div class="sec-title">LOVE SCAN – REAL TIME</div>
+      <table class="mt">
+        <tr><td class="tag">SYNC</td><td class="label">Heartbeat Sync</td><td class="val">100%</td><td><span class="badge b-rose">PERFECT</span></td></tr>
+        <tr><td class="tag">TRIG</td><td class="label">Smile Trigger</td><td class="val">0.001s</td><td><span class="badge b-rose">INSTANT</span></td></tr>
+        <tr><td class="tag">FLTR</td><td class="label">Butterflies Rate</td><td class="val">9999</td><td><span class="badge b-gold">9999/9999</span></td></tr>
+        <tr><td class="tag">COMP</td><td class="label">Compatibility</td><td class="val">100.00</td><td><span class="badge b-soft">MATCHED</span></td></tr>
+        <tr><td class="tag">BUG</td><td class="label">Bugs Found</td><td class="val">0</td><td><span class="badge b-up">CLEAN</span></td></tr>
+      </table>
+      <div class="divider"></div>
+      <div class="sec-title">VALENTINE WIRE</div>
+      <div class="news"><div class="news-time">00:00:03</div><span class="ntag nt-r">REPORT:</span><span class="ntext"> Love scan returned zero defects. Analysts say "unprecedented" results.</span></div>
+      <div class="news"><div class="news-time">00:00:04</div><span class="ntag nt-f">FORECAST:</span><span class="ntext"> Compatibility stocks at record highs. No correction expected.</span></div>
+    </div>
+    <div class="bb-panel" id="bb2">
+      <div class="sec-title">SECRET LETTER PORTFOLIO</div>
+      <table class="mt">
+        <tr><td class="tag">LTR1</td><td class="label">Warmth Output</td><td class="val">∞</td><td><span class="badge b-rose">UNLIMITED</span></td></tr>
+        <tr><td class="tag">LTR2</td><td class="label">Universe Match</td><td class="val">ALL</td><td><span class="badge b-gold">EVERY ONE</span></td></tr>
+        <tr><td class="tag">LTR3</td><td class="label">Everything Score</td><td class="val">1000</td><td><span class="badge b-rose">MAXED</span></td></tr>
+        <tr><td class="tag">SENT</td><td class="label">Letters Delivered</td><td class="val">3/3</td><td><span class="badge b-up">ALL SENT</span></td></tr>
+      </table>
+      <div class="divider"></div>
+      <div class="sec-title">VALENTINE WIRE</div>
+      <div class="news"><div class="news-time">00:00:05</div><span class="ntag nt-a">ALERT:</span><span class="ntext"> All 3 secret letters delivered successfully. Impact: massive.</span></div>
+      <div class="news"><div class="news-time">00:00:06</div><span class="ntag nt-f">FORECAST:</span><span class="ntext"> Warmth futures trading at all-time highs across every universe.</span></div>
+    </div>
+    <div class="bb-panel" id="bb3">
+      <div class="sec-title">FOREVER DASHBOARD – FINAL</div>
+      <table class="mt">
+        <tr><td class="tag">LOVE</td><td class="label">Love Intensity</td><td class="val">∞∞∞</td><td><span class="badge b-rose">OVERFLOW</span></td></tr>
+        <tr><td class="tag">ROSE</td><td class="label">Romance Index</td><td class="val">9999</td><td><span class="badge b-rose">ALL TIME HIGH</span></td></tr>
+        <tr><td class="tag">EVER</td><td class="label">Forever Rating</td><td class="val">∞</td><td><span class="badge b-gold">LOCKED IN</span></td></tr>
+        <tr><td class="tag">STAR</td><td class="label">My Universe</td><td class="val">★★★★★</td><td><span class="badge b-soft">PERFECT</span></td></tr>
+        <tr><td class="tag">YOU</td><td class="label">The One</td><td class="val">NEETU</td><td><span class="badge b-rose">CONFIRMED</span></td></tr>
+      </table>
+      <div class="divider"></div>
+      <div class="sec-title">FINAL BROADCAST</div>
+      <div class="news"><div class="news-time">00:00:07</div><span class="ntag nt-a">ALERT:</span><span class="ntext"> Valentine protocol complete. Love levels: permanently maxed. 💕</span></div>
+      <div class="news"><div class="news-time">00:00:08</div><span class="ntag nt-r">REPORT:</span><span class="ntext"> This is not a drill. Forever has officially begun.</span></div>
+    </div>
+    <div class="bb-footer">
+      <span>Press ENTER to run</span>
+      <span>valentine '26 ~</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* ═══ SOUNDS via Web Audio (zero external files) ═══ */
+let audioCtx;
+function ctx(){ return audioCtx||(audioCtx=new(window.AudioContext||window.webkitAudioContext)()); }
+
+function playClick(){
+  const c=ctx(), now=c.currentTime;
+  // noise burst
+  const len=c.sampleRate*.028;
+  const buf=c.createBuffer(1,len,c.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,50);
+  const s=c.createBufferSource(); s.buffer=buf;
+  const ng=c.createGain(); ng.gain.setValueAtTime(.15,now); ng.gain.exponentialRampToValueAtTime(.001,now+.028);
+  // click tone
+  const o=c.createOscillator(); o.type='square';
+  o.frequency.setValueAtTime(2200,now); o.frequency.exponentialRampToValueAtTime(800,now+.012);
+  const og=c.createGain(); og.gain.setValueAtTime(.06,now); og.gain.exponentialRampToValueAtTime(.001,now+.022);
+  s.connect(ng); ng.connect(c.destination);
+  o.connect(og); og.connect(c.destination);
+  s.start(now); o.start(now); o.stop(now+.03);
+}
+
+function playEnter(){
+  const c=ctx(), now=c.currentTime;
+  // deep thump
+  const len=c.sampleRate*.07;
+  const buf=c.createBuffer(1,len,c.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,22);
+  const s=c.createBufferSource(); s.buffer=buf;
+  const ng=c.createGain(); ng.gain.setValueAtTime(.28,now); ng.gain.exponentialRampToValueAtTime(.001,now+.07);
+  // warm low tone
+  const o=c.createOscillator(); o.type='sine';
+  o.frequency.setValueAtTime(260,now); o.frequency.exponentialRampToValueAtTime(110,now+.055);
+  const og=c.createGain(); og.gain.setValueAtTime(.1,now); og.gain.exponentialRampToValueAtTime(.001,now+.08);
+  // confirmation ping
+  const o2=c.createOscillator(); o2.type='sine';
+  o2.frequency.setValueAtTime(880,now+.035); o2.frequency.exponentialRampToValueAtTime(1100,now+.07);
+  const og2=c.createGain(); og2.gain.setValueAtTime(0,now); og2.gain.setValueAtTime(.07,now+.035); og2.gain.exponentialRampToValueAtTime(.001,now+.11);
+  s.connect(ng);  ng.connect(c.destination);
+  o.connect(og);  og.connect(c.destination);
+  o2.connect(og2); og2.connect(c.destination);
+  s.start(now); o.start(now); o.stop(now+.1); o2.start(now); o2.stop(now+.14);
+}
+
+function playWrong(){
+  const c=ctx(), now=c.currentTime;
+  const o=c.createOscillator(); o.type='sawtooth';
+  o.frequency.setValueAtTime(200,now); o.frequency.exponentialRampToValueAtTime(80,now+.18);
+  const og=c.createGain(); og.gain.setValueAtTime(.1,now); og.gain.exponentialRampToValueAtTime(.001,now+.2);
+  o.connect(og); og.connect(c.destination);
+  o.start(now); o.stop(now+.22);
+}
+
+/* ═══ BOOT ═══ */
+const boot=document.getElementById('boot');
+const main=document.getElementById('mainScreen');
+const barFill=document.getElementById('barFill');
+const pctText=document.getElementById('pctText');
+let t=0;
+function tick(ms,fn){setTimeout(fn,t);t+=ms;}
+
+['b0','b1','b2','b3','b4','b5','b6','b7'].forEach(id=>{
+  tick(380,()=>{ document.getElementById(id).classList.add('show'); playClick(); });
+});
+tick(280,()=>document.getElementById('b8').classList.add('show'));
+tick(180,()=>document.getElementById('b_bar').classList.add('show'));
+[10,25,40,55,70,85,100].forEach(v=>{
+  tick(320,()=>{ barFill.style.width=v+'%'; pctText.textContent='  '+v+'%'; });
+});
+tick(280,()=>document.getElementById('b9').classList.add('show'));
+tick(450,()=>document.getElementById('b10').classList.add('show'));
+tick(650,()=>document.getElementById('b11').classList.add('show'));
+tick(1300,()=>{ boot.classList.add('gone'); main.classList.add('show'); });
+
+/* ═══ SCENES ═══ */
+const CMDS=['run love_scan.sh','cat secret_letters.log','run forever.exe'];
+const scenes=[0,1,2,3].map(i=>document.getElementById('s'+i));
+const panels=[0,1,2,3].map(i=>document.getElementById('bb'+i));
+const typedEls=[0,1,2].map(i=>document.getElementById('typed'+i));
+const badge=document.getElementById('badge');
+let cur=0, buffer='';
+
+function goTo(idx){
+  scenes.forEach(s=>s.classList.remove('active'));
+  panels.forEach(p=>p.classList.remove('active'));
+  scenes[idx].classList.add('active');
+  panels[idx].classList.add('active');
+  badge.textContent=(idx+1)+' / 4';
+  buffer='';
+}
+goTo(0);
+
+/* ═══ KEYBOARD ═══ */
+document.addEventListener('keydown',e=>{
+  if(!boot.classList.contains('gone')) return;   // boot still showing
+  if(cur>=3) return;                              // last scene
+
+  const target=CMDS[cur];
+  const el=typedEls[cur];
+
+  if(e.key==='Enter'){
+    e.preventDefault();
+    playEnter();
+    if(buffer===target){
+      setTimeout(()=>{ cur++; goTo(cur); }, 200);
+    } else {
+      playWrong();
+      el.classList.add('wrong');
+      setTimeout(()=>{ el.classList.remove('wrong'); el.textContent=''; buffer=''; }, 350);
+    }
+    return;
+  }
+
+  if(e.key==='Backspace'){
+    e.preventDefault();
+    if(buffer.length>0){ playClick(); buffer=buffer.slice(0,-1); el.textContent=buffer; }
+    return;
+  }
+
+  if(e.key.length===1){
+    e.preventDefault();
+    if(buffer.length>=target.length) return;
+    playClick();
+    buffer+=e.key;
+    el.textContent=buffer;
+  }
+});
+
+})();
+</script>
+</body>
+</html>
